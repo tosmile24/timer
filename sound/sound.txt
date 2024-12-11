@@ -1,0 +1,5 @@
+1start.wav, เสียงเริ่มต้น (Start)
+2end.wav, เสียงสิ้นสุด (End)
+3Feedback.wav, เสียงรอ (Waiting)
+4changeStation.wav, เสียงจบเวลารอ (End Waiting)
+5short.wav, เสียงแจ้งเตือน (Notify)
