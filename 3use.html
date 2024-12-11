@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ตัวจับเวลานับถอยหลัง</title>
+  <style>
+          /* ธีมพื้นฐาน */
+          body[data-theme="dark"] {
+            background-color: #333;
+            color: #fff;
+          }
+
+          body[data-theme="light"] {
+            background-color: #f4f4f4;
+            color: #000;
+          }
+
+          /* จัดข้อความให้อยู่กึ่งกลาง */
+          body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+          }
+
+          #logo-container {
+            margin: 20px auto;
+          }
+
+          #logo {
+            border-radius: 50%;
+            max-width: 100px;
+            max-height: 100px;
+            display: none;
+            margin: 0 auto;
+          }
+
+              #container {
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                margin: 20px;
+              }
+
+              #settings, #sound-settings {
+                flex: 1;
+                max-width: 400px;
+                padding: 20px;
+                background: #fff;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                color : #000;
+              }
+
+          /* จัดกลุ่มฟอร์มและข้อความ */
+          .input-group {
+            margin: 10px auto;
+            width: 80%;
+            max-width: 400px;
+          }
+
+          .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            /*font-size: 16px;*/
+          }
+          /*
+          .input-group input[type="number"], 
+          .input-group input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+          }
+            */
+
+          /* ปุ่ม */
+          button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+          }
+
+          button:hover {
+            background-color: #0056b3;
+          }
+
+          /* จัดการนับถอยหลัง */
+          #timer {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px 0;
+          }
+
+          #waiting {
+            font-size: 20px;
+            color: #666;
+          }
+
+          /* ข้อความสถานะ */
+          #status {
+            margin-top: 20px;
+            font-size: 18px;
+            line-height: 1.6;
+            color: #444;
+          }
+
+          #fullscreen-timer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: white;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+          }
+
+          #fullscreen-timer-display {
+            font-size: 120px;
+            font-weight: bold;
+            text-align: center;
+          }
+
+          #close-fullscreen-btn {
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          background-color: red;
+          color: white;
+          border: none;
+          border-radius: 5px;
+          padding: 10px 15px;
+          font-size: 16px;
+          cursor: pointer;
+          z-index: 1001;
+        }
+
+        #close-fullscreen-btn:hover {
+          background-color: darkred;
+        }
+
+
+  </style>
+</head>
+<body data-theme="light">
+
+  <h1>ตัวจับเวลานับถอยหลัง</h1>
+
+  <div id="logo-container">
+    <img id="logo" alt="โลโก้" />
+  </div>
+
+  <div id="container">
+    <div id="settings">
+      <h2>ตั้งค่าเวลา</h2>
+      <!-- ตั้งค่าเวลา -->
+        <div class="input-group">
+          <label>ตั้งเวลานับถอยหลัง (วินาที): </label>
+          <input type="number" id="timeInput" min="1" value="10">
+        </div>
+        <div class="input-group">
+          <label>ตั้งจำนวนรอบ: </label>
+          <input type="number" id="roundsInput" min="1" value="3">
+        </div>
+        <div class="input-group">
+          <label>ตั้งเวลารอ (วินาที): </label>
+          <input type="number" id="waitingInput" min="1" value="5">
+        </div>
+        <div class="input-group">
+          <label>ตั้งเวลาแจ้งเตือน (ก่อนหมดเวลา): </label>
+          <input type="number" id="notifyInput" min="1" value="3">
+        </div>
+    </div>
+
+    <div id="sound-settings" >
+      <h2 style="margin-bottom: 0px;">ตั้งค่าเสียง</h2>
+      <small style="margin-block-end: 0.83em;"> (รองรับ .wav, .m4a)</small>
+        <!-- เพิ่มเสียง -->
+        <div class="input-group">
+          <label>เลือกเสียงเริ่มต้น (Start): </label>
+          <input type="file" id="soundStart" accept=".wav, .m4a">
+        </div>
+        <div class="input-group">
+          <label>เลือกเสียงสิ้นสุด (End): </label>
+          <input type="file" id="soundEnd" accept=".wav, .m4a">
+        </div>
+        <div class="input-group">
+          <label>เลือกเสียงรอ (Waiting): </label>
+          <input type="file" id="soundWaiting" accept=".wav, .m4a">
+        </div>
+        <div class="input-group">
+          <label>เลือกเสียงจบเวลารอ (End Waiting): </label>
+          <input type="file" id="soundEndWaiting" accept=".wav, .m4a">
+        </div>
+        <div class="input-group">
+          <label>เลือกเสียงแจ้งเตือน (Notify): </label>
+          <input type="file" id="soundNotify" accept=".wav, .m4a">
+        </div>
+        <div class="input-group">
+          <label>เลือกเสียงกริ่งยาว (Long): </label>
+          <input type="file" id="soundLong" accept=".wav, .m4a">
+        </div>
+
+        <!-- ตั้งค่า logo -->
+        <div class="input-group">
+          <label>ตั้งค่ารูปโลโก้: <small>(รองรับ .jpg, .png)</small></label>
+          <input type="file" id="logoInput" accept=".jpg, .png" onchange="updateLogo()">
+        </div>
+
+    </div>
+  </div>
+
+
+
+
+  <button onclick="startTimer()">เริ่มจับเวลา</button>
+  <button onclick="toggleFullscreen()">ดูแบบเต็มจอ</button>
+  <button onclick="toggleTheme()">เปลี่ยนธีม</button>
+  <div id="fullscreen-timer" style="display: none;">
+    <div id="fullscreen-content">
+      <button id="close-fullscreen-btn" onclick="toggleFullscreen()">ปิดเต็มจอ</button>
+      <div id="fullscreen-timer-display">00:00</div>
+    </div>
+  </div>
+
+  <div id="timer">00:00</div>
+  <div id="waiting" style="display: none;">รอ: 00</div>
+  <div id="status"></div>
+
+  <script>
+    let countdownInterval, waitingInterval, notifyTimeout, roundsRemaining, duration, waitingTime, notifyTime;
+    let soundStart, soundEnd, soundWaiting, soundEndWaiting, soundNotify, soundLong;
+    let currentRound = 0;
+    let totalDuration = 0;
+
+    function toggleTheme() {
+      const body = document.body;
+      const currentTheme = body.getAttribute("data-theme");
+      body.setAttribute("data-theme", currentTheme === "light" ? "dark" : "light");
+    }
+
+    function updateLogo() {
+      const logoInput = document.getElementById("logoInput");
+      const logo = document.getElementById("logo");
+
+      if (logoInput.files && logoInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          logo.src = e.target.result;
+          logo.style.display = "block";
+        };
+        reader.readAsDataURL(logoInput.files[0]);
+      } else {
+        logo.style.display = "none";
+      }
+    }
+
+    function loadSound(input, audioVariable) {
+      if (input.files && input.files[0]) {
+        const fileURL = URL.createObjectURL(input.files[0]);
+        window[audioVariable] = new Audio(fileURL);
+        console.log(`กำหนดเสียงสำเร็จสำหรับ ${audioVariable}: ${fileURL}`);
+        window[audioVariable].onerror = () => {
+          console.error(`เกิดข้อผิดพลาดในการโหลดไฟล์เสียง: ${input.files[0].name}`);
+        };
+      } else {
+        console.warn(`ไม่มีไฟล์เสียงสำหรับ ${audioVariable}`);
+        window[audioVariable] = null;
+      }
+    }
+
+
+
+    function playSound(sound) {
+      if (sound) {
+        console.log("พยายามเล่นเสียง");
+        sound.play()
+          .then(() => console.log("เสียงกำลังเล่น"))
+          .catch((error) => console.error("เกิดปัญหาในการเล่นเสียง:", error));
+      } else {
+        console.warn("ไม่มีเสียงที่จะเล่น");
+      }
+    }
+
+    /*
+    ตัวอย่างการทำงาน
+    รอบทั่วไป:
+    เล่นเสียง Waiting -> จับเวลารอ -> เล่นเสียง End Waiting -> เริ่มรอบใหม่.
+    รอบสุดท้าย:
+    เล่นเสียง Waiting -> จับเวลารอ -> เล่นเสียง End -> จบการทำงาน.
+    */
+
+
+    function startTimer() {
+
+      /////
+
+      // เคลียร์ตัวจับเวลาทั้งหมดก่อนเริ่มใหม่
+      clearInterval(countdownInterval);
+      clearInterval(waitingInterval);
+      clearTimeout(notifyTimeout);
+
+      // รีเซ็ตค่าเริ่มต้น
+      document.getElementById("timer").textContent = "00:00";
+      document.getElementById("waiting").style.display = "none";
+      document.getElementById("status").textContent = "";
+      document.getElementById("fullscreen-timer").style.display = "none";
+      fullscreenActive = false;
+
+      // โหลดค่าใหม่จากอินพุต
+
+      
+      duration = parseInt(document.getElementById("timeInput").value);
+      roundsRemaining = parseInt(document.getElementById("roundsInput").value);
+      waitingTime = parseInt(document.getElementById("waitingInput").value);
+      notifyTime = parseInt(document.getElementById("notifyInput").value);
+      totalRounds = roundsRemaining;
+      startTime = new Date();
+      /////
+
+      const startInput = document.getElementById("soundStart");
+      const endInput = document.getElementById("soundEnd");
+      const waitingInput = document.getElementById("soundWaiting");
+      const endWaitingInput = document.getElementById("soundEndWaiting");
+      const notifyInput = document.getElementById("soundNotify");
+      const longInput = document.getElementById("soundLong");
+
+      if (
+        isNaN(duration) || isNaN(roundsRemaining) || isNaN(waitingTime) || 
+        isNaN(notifyTime) || duration <= 0 || roundsRemaining <= 0 || 
+        waitingTime <= 0 || notifyTime <= 0 || notifyTime >= duration
+      ) {
+        alert("กรุณากรอกค่าที่ถูกต้อง");
+        return;
+      }
+
+      if (
+        startInput.files.length === 0 || 
+        endInput.files.length === 0 || 
+        waitingInput.files.length === 0 || 
+        endWaitingInput.files.length === 0 ||
+        notifyInput.files.length === 0 ||
+        longInput.files.length === 0
+      ) {
+        alert("กรุณาเลือกไฟล์เสียงทั้งหมด");
+        return;
+      }
+
+      soundStart = new Audio(URL.createObjectURL(startInput.files[0]));
+      soundEnd = new Audio(URL.createObjectURL(endInput.files[0]));
+      soundWaiting = new Audio(URL.createObjectURL(waitingInput.files[0]));
+      soundEndWaiting = new Audio(URL.createObjectURL(endWaitingInput.files[0]));
+      soundNotify = new Audio(URL.createObjectURL(notifyInput.files[0]));
+      soundLong = new Audio(URL.createObjectURL(longInput.files[0]));
+
+      totalDuration = roundsRemaining * (duration + waitingTime);
+      const now = new Date();
+      const endTime = new Date(now.getTime() + totalDuration * 1000);
+
+      document.getElementById("status").textContent = `รอบ: ${currentRound}/${roundsRemaining} | เวลารวม: ${totalDuration} วินาที | สิ้นสุดที่: ${endTime.toLocaleTimeString()}`;
+
+      //playSound(soundStart); // เล่นเสียงเริ่มต้น
+      if (soundLong) soundLong.play();
+      if (soundStart) soundStart.play();
+      
+      runCountdown();
+    }
+    
+    function runCountdown() {
+      const endTime = Date.now() + duration * 1000;
+
+      if (soundNotify && notifyTime < duration) {
+        notifyTimeout = setTimeout(() => soundNotify.play(), (duration - notifyTime) * 1000);
+      }
+
+      countdownInterval = setInterval(() => {
+        const now = Date.now();
+        const timeLeft = Math.max(0, Math.floor((endTime - now) / 1000));
+
+    // แปลงเวลาเป็นนาที:วินาที
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    const formattedTime = minutes > 0 
+      ? `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}` 
+      : `00:${String(seconds).padStart(2, "0")}`;
+
+    document.getElementById("timer").textContent = formattedTime;
+
+        if (timeLeft <= 0) {
+          clearInterval(countdownInterval);
+          clearTimeout(notifyTimeout);
+
+          if (roundsRemaining > 1) {
+            if (soundWaiting) soundWaiting.play();
+            //startWaiting();
+            startWaiting(false); // ไม่ใช่รอบสุดท้าย
+          } else {
+            //if (soundEnd) soundEnd.play();
+            //endSession();
+            startWaiting(true); // รอบสุดท้าย
+          }
+
+          roundsRemaining--;
+          updateStatus();
+        }
+      }, 500);
+    }
+
+    function startWaiting() {
+      document.getElementById("waiting").style.display = "block";
+      let waitingLeft = waitingTime;
+
+      waitingInterval = setInterval(() => {
+        document.getElementById("waiting").textContent = `รอ: ${String(waitingLeft).padStart(2, "0")}`;
+
+        if (waitingLeft <= 0) {
+          clearInterval(waitingInterval);
+          document.getElementById("waiting").style.display = "none";
+
+          if (soundEndWaiting) soundEndWaiting.play();
+
+          runCountdown();
+        }
+
+        waitingLeft--;
+      }, 1000);
+    }
+
+    function startWaiting(isLastRound) {
+      document.getElementById("waiting").style.display = "block";
+      let waitingLeft = waitingTime;
+
+      waitingInterval = setInterval(() => {
+        document.getElementById("waiting").textContent = `รอ: ${String(waitingLeft).padStart(2, "0")}`;
+
+        if (waitingLeft <= 0) {
+          clearInterval(waitingInterval);
+          document.getElementById("waiting").style.display = "none";
+
+          if (isLastRound) {
+            if (soundLong) soundLong.play();
+            if (soundEnd) soundEnd.play(); // เล่นเสียง End
+            endSession(); // จบรอบสุดท้าย
+          } else {
+            if (soundEndWaiting) soundEndWaiting.play(); // เล่นเสียง End Waiting
+            runCountdown(); // เริ่มรอบใหม่
+          }
+        }
+
+        waitingLeft--;
+      }, 1000);
+    }
+
+
+    function endSession() {
+      document.getElementById("timer").textContent = "เสร็จสิ้น!";
+      updateStatus(true);
+    }
+
+    function updateStatus(final = false) {
+      const now = new Date();
+      const elapsedTime = Math.floor((now - startTime) / 1000);
+      const totalElapsed = Math.floor(elapsedTime / totalRounds * (totalRounds - roundsRemaining));
+      const endTime = new Date(now.getTime() + (roundsRemaining * (duration + waitingTime)) * 1000);
+
+      document.getElementById("status").textContent = `
+        รอบที่ทำไป: ${totalRounds - roundsRemaining} / ${totalRounds},
+        เวลารวมที่ใช้ไป: ${Math.floor(totalElapsed / 60)} นาที ${totalElapsed % 60} วินาที,
+        คาดว่าจะเสร็จเวลา: ${endTime.toLocaleTimeString()}
+      `;
+    }
+
+    /* Fullscreen */
+    let fullscreenActive = false;
+
+    function toggleFullscreen() {
+      const fullscreenDiv = document.getElementById("fullscreen-timer");
+      const timerDisplay = document.getElementById("fullscreen-timer-display");
+      const mainTimer = document.getElementById("timer");
+
+      if (!fullscreenActive) {
+        // เปิด fullscreen
+        fullscreenDiv.style.display = "flex";
+        fullscreenActive = true;
+        timerDisplay.textContent = mainTimer.textContent;
+        syncFullscreenTimer();
+      } else {
+        // ปิด fullscreen
+        fullscreenDiv.style.display = "none";
+        fullscreenActive = false;
+        clearInterval(fullscreenSyncInterval);
+      }
+    }
+
+    let fullscreenSyncInterval;
+
+    function syncFullscreenTimer() {
+      fullscreenSyncInterval = setInterval(() => {
+        const timerDisplay = document.getElementById("fullscreen-timer-display");
+        const mainTimer = document.getElementById("timer");
+        timerDisplay.textContent = mainTimer.textContent; // อัปเดตเวลาจากหน้าหลัก
+      }, 500); // อัปเดตทุก 500 มิลลิวินาที
+    }
+
+        
+
+  </script>
+</body>
+</html>
